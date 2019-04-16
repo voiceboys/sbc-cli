@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2019 Alexandr Dubovikov <alexandr.dubovikov@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,14 +17,9 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"log"
-	//"time"
-
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 var cfgFile string
@@ -45,34 +40,6 @@ to quickly create a Cobra application.`,
 }
 
 
-func checkErr(err error) {
-	if err != nil {
-	    log.Fatal(err)
-        }
-}
-
-func initSql() {
-	//var created time.Time
-
-	db, err := sql.Open("sqlite3", "./sbc-data.db")
-        checkErr(err)
-	defer db.Close()
-
-	sqlStmt := `
-	CREATE TABLE userinfo (uid INTEGER PRIMARY KEY AUTOINCREMENT,username VARCHAR(64) NULL,departname VARCHAR(64) NULL,created DATE NULL);
-	delete from userinfo;	`
-
-        _, err = db.Exec(sqlStmt)
-        checkErr(err)
-        log.Printf("%q: %s\n", err, sqlStmt)
-
-
-        // insert
-        //stmt, err := db.Prepare("INSERT INTO userinfo(username, departname, created) values(?,?,?)")
-        //checkErr(err)
-        
-}
-
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -84,8 +51,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	initSql();
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
