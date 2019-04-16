@@ -37,12 +37,44 @@ func initSql(databaseName string) {
         checkErr(err)
 	defer db.Close()
 
+	/* sbc trunk */
 	sqlStmt := `
-		CREATE TABLE IF NOT EXISTS userinfo (uid INTEGER PRIMARY KEY AUTOINCREMENT,username VARCHAR(64) NULL,departname VARCHAR(64) NULL,created DATE NULL);
+		CREATE TABLE IF NOT EXISTS sbc_trunk (
+			uid INTEGER PRIMARY KEY AUTOINCREMENT,
+			username VARCHAR(64) NULL,
+			departname VARCHAR(64) NULL,
+			created DATE NULL
+		);
+	`		
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+        
+        /* sbc rtpengine */
+        sqlStmt = `
+		CREATE TABLE IF NOT EXISTS sbc_rtpengine (
+			uid INTEGER PRIMARY KEY AUTOINCREMENT,
+			username VARCHAR(64) NULL,
+			departname VARCHAR(64) NULL,
+			created DATE NULL
+		);
 	`		
         _, err = db.Exec(sqlStmt)
         checkErr(err)
           
+        /* KAMAILIO/OPENSIPS */
+        /* version */      
+        sqlStmt = `
+        	CREATE TABLE IF NOT EXISTS version (
+		    table_name VARCHAR(32) NOT NULL,
+		    table_version INTEGER DEFAULT 0 NOT NULL,
+		    CONSTRAINT version_table_name_idx UNIQUE (table_name)
+		);
+
+		INSERT INTO version (table_name, table_version) values ('version','1');
+	`
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+                        
   	/* dispatcher */      
         sqlStmt = `
         	CREATE TABLE IF NOT EXISTS dispatcher (
@@ -54,13 +86,95 @@ func initSql(databaseName string) {
 		    attrs VARCHAR(128) DEFAULT '' NOT NULL,
 		    description VARCHAR(64) DEFAULT '' NOT NULL
 		);			
+
+		INSERT INTO version (table_name, table_version) values ('dispatcher','4');
 	`
         _, err = db.Exec(sqlStmt)
         checkErr(err)
         
+        /* trusted */      
+        sqlStmt = `
+        	CREATE TABLE IF NOT EXISTS trusted (
+  		  id INTEGER PRIMARY KEY NOT NULL,
+  		  src_ip VARCHAR(50) NOT NULL,
+  		  proto VARCHAR(4) NOT NULL,
+  		  from_pattern VARCHAR(64) DEFAULT NULL,
+  		  ruri_pattern VARCHAR(64) DEFAULT NULL,
+  		  tag VARCHAR(64),
+  		  priority INTEGER DEFAULT 0 NOT NULL
+  		  );
+
+  		  CREATE INDEX trusted_peer_idx ON trusted (src_ip);
+
+  		  INSERT INTO version (table_name, table_version) values ('trusted','6');
+	`
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+                	
+	/* address */      
+        sqlStmt = `        
+	       	CREATE TABLE IF NOT EXISTS address (
+		    id INTEGER PRIMARY KEY NOT NULL,
+		    grp INTEGER DEFAULT 1 NOT NULL,
+		    ip_addr VARCHAR(50) NOT NULL,
+		    mask INTEGER DEFAULT 32 NOT NULL,
+		    port SMALLINT DEFAULT 0 NOT NULL,
+		    tag VARCHAR(64)
+		);
+
+		INSERT INTO version (table_name, table_version) values ('address','6');
+	`
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+        
+        /* pl_pipelimit  */      
+        sqlStmt = `     
+		CREATE TABLE IF NOT EXISTS pl_pipes (
+		    id INTEGER PRIMARY KEY NOT NULL,
+		    pipeid VARCHAR(64) DEFAULT '' NOT NULL,
+		    algorithm VARCHAR(32) DEFAULT '' NOT NULL,
+		    plimit INTEGER DEFAULT 0 NOT NULL
+		);
+
+		INSERT INTO version (table_name, table_version) values ('pl_pipes','1');
+	`
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+        
+        /* domain  */      
+        sqlStmt = `     
+        	CREATE TABLE IF NOT EXISTS domain (
+  		  id INTEGER PRIMARY KEY NOT NULL,
+  		  domain VARCHAR(64) NOT NULL,
+  		  did VARCHAR(64) DEFAULT NULL,
+  		  last_modified TIMESTAMP WITHOUT TIME ZONE DEFAULT '2000-01-01 00:00:01' NOT NULL,
+  		  CONSTRAINT domain_domain_idx UNIQUE (domain)
+  		);
+  		
+  		INSERT INTO version (table_name, table_version) values ('domain','2');
+	`
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+        
+        /* domain_attrs  */      
+        sqlStmt = `             	
+        	CREATE TABLE IF NOT EXISTS domain_attrs (
+		    id INTEGER PRIMARY KEY NOT NULL,
+		    did VARCHAR(64) NOT NULL,
+		    name VARCHAR(32) NOT NULL,
+		    type INTEGER NOT NULL,
+		    value VARCHAR(255) NOT NULL,
+		    last_modified TIMESTAMP WITHOUT TIME ZONE DEFAULT '2000-01-01 00:00:01' NOT NULL
+		);
+
+		CREATE INDEX domain_attrs_domain_attrs_idx ON domain_attrs (did, name);
+		INSERT INTO version (table_name, table_version) values ('domain_attrs','1');
+	`
+        _, err = db.Exec(sqlStmt)
+        checkErr(err)
+                        
+        
         //log.Printf("%q: %s\n", err, sqlStmt)
-
-
         // insert
         //stmt, err := db.Prepare("INSERT INTO userinfo(username, departname, created) values(?,?,?)")
         //checkErr(err)
@@ -72,12 +186,8 @@ func initSql(databaseName string) {
 var databaseCmd = &cobra.Command{
 	Use:   "database",
 	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `A longer description.`,
+	
 	Run: func(cmd *cobra.Command, args []string) {			
 
 		if cmd.Flags().Changed("init") {
