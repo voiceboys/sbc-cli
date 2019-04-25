@@ -39,44 +39,98 @@ func initSql(databaseName string) {
 
 	/* sbc trunk */
 	sqlStmt := `
-		CREATE TABLE IF NOT EXISTS sbc_trunk (
-			uid INTEGER PRIMARY KEY AUTOINCREMENT,
-			username VARCHAR(64) NULL,
-			departname VARCHAR(64) NULL,
-			created DATE NULL
-		);
+		CREATE TABLE IF NOT EXISTS sbc_interface_list (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			if_name VARCHAR(50) NOT NULL,
+			mac VARCHAR(40) NOT NULL,
+			created DATE NULL,
+			username VARCHAR(40) NOT NULL
+		);	
 	`		
-        _, err = db.Exec(sqlStmt)
-        checkErr(err)
+    _, err = db.Exec(sqlStmt)
+    checkErr(err)
         
-        /* sbc rtpengine */
-        sqlStmt = `
-		CREATE TABLE IF NOT EXISTS sbc_rtpengine (
-			uid INTEGER PRIMARY KEY AUTOINCREMENT,
-			username VARCHAR(64) NULL,
-			departname VARCHAR(64) NULL,
-			created DATE NULL
+    /* sbc rtpengine */
+    sqlStmt = `
+		CREATE TABLE IF NOT EXISTS sbc_ip_address (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			grp INTEGER DEFAULT 1 NOT NULL,
+			ip_addr VARCHAR(50) NOT NULL,
+			mask INTEGER DEFAULT 32 NOT NULL,
+			tag VARCHAR(64),
+			created DATE NULL,
+			username VARCHAR(40) NOT NULL
 		);
 	`		
-        _, err = db.Exec(sqlStmt)
-        checkErr(err)
-          
-        /* KAMAILIO/OPENSIPS */
-        /* version */      
-        sqlStmt = `
+    _, err = db.Exec(sqlStmt)
+	checkErr(err)
+	
+	/* sbc */
+    sqlStmt = `
+		CREATE TABLE IF NOT EXISTS sbc_trunk (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name VARCHAR(50) NOT NULL,
+			grp INTEGER DEFAULT 1 NOT NULL,
+			grp_sig_untrust_dst VARCHAR(100) NOT NULL,
+			grp_sig_untrust_src VARCHAR(100) NOT NULL,
+			grp_sig_trust_dst VARCHAR(100) NOT NULL,
+			grp_sig_trust_src VARCHAR(100) NOT NULL,
+			grp_media_trust VARCHAR(100) NOT NULL,
+			grp_media_untrust VARCHAR(100) NOT NULL,
+			description VARCHAR(200) NOT NULL,
+			topohide SMALLINT NOT NULL, 
+			type SMALLINT NOT NULL,
+			active SMALLINT NOT NULL,
+			created DATE NULL,
+			username VARCHAR(40) NOT NULL
+		);	
+	`		
+    _, err = db.Exec(sqlStmt)
+    checkErr(err)
+			  
+	/* sbc */
+    sqlStmt = `
+		CREATE TABLE IF NOT EXISTS sbc_signaling (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			ip_addr VARCHAR(50) NOT NULL,
+			port INTEGER DEFAULT 5060 NOT NULL,
+			proto SMALLINT NOT NULL,
+			description VARCHAR(100) NOT NULL,
+			created DATE NULL,
+			username VARCHAR(40) NOT NULL
+		);		
+	`		
+    _, err = db.Exec(sqlStmt)
+	checkErr(err)
+	
+	/* sbc */
+    sqlStmt = `
+		CREATE TABLE IF NOT EXISTS sbc_media (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			ip_addr VARCHAR(50) NOT NULL,
+			description VARCHAR(100) NOT NULL,
+			created DATE NULL,
+			username VARCHAR(40) NOT NULL
+		);`		
+    _, err = db.Exec(sqlStmt)
+	checkErr(err)
+	
+    /* KAMAILIO/OPENSIPS */
+    /* version */      
+    sqlStmt = `
         	CREATE TABLE IF NOT EXISTS version (
 		    table_name VARCHAR(32) NOT NULL,
 		    table_version INTEGER DEFAULT 0 NOT NULL,
 		    CONSTRAINT version_table_name_idx UNIQUE (table_name)
-		);
+	);
 
-		INSERT INTO version (table_name, table_version) values ('version','1');
+	INSERT INTO version (table_name, table_version) values ('version','1');
 	`
-        _, err = db.Exec(sqlStmt)
-        checkErr(err)
+    _, err = db.Exec(sqlStmt)
+    checkErr(err)
                         
   	/* dispatcher */      
-        sqlStmt = `
+    sqlStmt = `
         	CREATE TABLE IF NOT EXISTS dispatcher (
 		    id INTEGER PRIMARY KEY NOT NULL,
 		    setid INTEGER DEFAULT 0 NOT NULL,
@@ -85,7 +139,7 @@ func initSql(databaseName string) {
 		    priority INTEGER DEFAULT 0 NOT NULL,
 		    attrs VARCHAR(128) DEFAULT '' NOT NULL,
 		    description VARCHAR(64) DEFAULT '' NOT NULL
-		);			
+	);			
 
 		INSERT INTO version (table_name, table_version) values ('dispatcher','4');
 	`
